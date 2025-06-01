@@ -1,0 +1,13 @@
+from downloader import download_fda_data
+from processor import extract_events
+from db_writer import insert_into_mysql
+import os
+
+if __name__ == "__main__":
+    latest_date = download_fda_data()
+    if latest_date:
+        json_path = f"data/raw_fda_{latest_date}.json"
+        csv_path = extract_events(json_path)
+        insert_into_mysql(csv_path)
+    else:
+        print("⚠️ No new data to process.")

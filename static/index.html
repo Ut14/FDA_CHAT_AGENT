@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FDA Agent Chat</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 2em; }
+      #chat { border: 1px solid #ccc; padding: 1em; max-width: 600px; height: 400px; overflow-y: auto; }
+      .message { margin-bottom: 1em; }
+      .user { color: blue; }
+      .bot { color: green; }
+    </style>
+</head>
+<body>
+
+<h2>FDA Agent Chat</h2>
+<div id="chat"></div>
+
+<input type="text" id="input" placeholder="Ask your question here" style="width: 400px;" />
+<button onclick="send()">Send</button>
+
+<script>
+async function send() {
+    const inputEl = document.getElementById('input');
+    const chatEl = document.getElementById('chat');
+    const question = inputEl.value.trim();
+    if (!question) return;
+
+    // Show user message
+    const userMsg = document.createElement('div');
+    userMsg.className = 'message user';
+    userMsg.textContent = 'You: ' + question;
+    chatEl.appendChild(userMsg);
+
+    // Clear input
+    inputEl.value = '';
+
+    // Prepare tool args for the example: searching drug by name
+    const toolName = "search_drug_by_name";
+    const toolArgs = JSON.stringify({ drug_name: question });
+
+    // Call backend
+    try {
+        const resp = await fetch('http://127.0.0.1:8000/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: question, tool_name: toolName, tool_args: toolArgs })
+        });
+        const data = await resp.json();
+        const botMsg = document.createElement('div');
+        botMsg.className = 'message bot';
+
+        if(data.response){
+            botMsg.textContent = 'FDA Agent: ' + data.response;
+        } else if(data.error){
+            botMsg.textContent = 'Error: ' + data.error;
+        } else {
+            botMsg.textContent = 'Unexpected response';
+        }
+        chatEl.appendChild(botMsg);
+    } catch(e) {
+        const errMsg = document.createElement('div');
+        errMsg.className = 'message bot';
+        errMsg.textContent = 'Error connecting to server.';
+        chatEl.appendChild(errMsg);
+    }
+
+    // Scroll to bottom
+    chatEl.scrollTop = chatEl.scrollHeight;
+}
+</script>
+
+</body>
+</html>
